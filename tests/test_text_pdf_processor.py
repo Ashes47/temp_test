@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 import pymupdf  # PyMuPDF
 import pytest
 
@@ -58,3 +59,30 @@ def test_basic_extraction_and_cleanup():
 
     # No excessive blank lines
     assert "\n\n\n" not in text
+
+
+def test_real_pdf_extraction_smoke():
+    pdf_path = Path(__file__).resolve().parents[1] / "German-SQP.pdf"
+    if not pdf_path.exists():
+        pytest.skip("German-SQP.pdf not present")
+
+    pdf_bytes = pdf_path.read_bytes()
+
+    proc = TextPDFProcessor()
+    res = proc.extract_text(pdf_bytes)
+
+    assert res.page_count >= 1
+    assert res.confidence >= 0.0
+    assert isinstance(res.extracted_text, str)
+    assert len(res.extracted_text) > 50
+    assert "\n\n\n" not in res.extracted_text
+
+    # Temp use this to make markdown file for comparison
+    # out_path = pdf_path.with_name(pdf_path.stem + ".extracted.md")
+    # out_path.write_text(res.extracted_text, encoding="utf-8")
+    # print(f"Extracted text written to: {out_path}")
+
+    # Use this to compare with the extracted markdown file
+    expected_extracted_text = Path(__file__).resolve().parents[1] / "German-SQP.extracted.md"
+    expected_extracted_text = expected_extracted_text.read_text(encoding="utf-8")
+    assert res.extracted_text == expected_extracted_text

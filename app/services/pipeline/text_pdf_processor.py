@@ -39,8 +39,6 @@ class TextPDFProcessor:
         # 3) Post-process for LLM-friendliness (esp. German docs)
         cleaned = self._postprocess_markdown(markdown)
 
-        # doc.close()
-
         return TextResult(
             extracted_text=cleaned,
             page_count=page_count,
