@@ -96,6 +96,6 @@ def test_real_pdfs_extraction_matches_expected_markdown():
 
         expected_path = md_dir / md_name
         if not expected_path.exists():
-            pytest.skip(f"Expected markdown missing: {expected_path}. Generate it using the commented code above.")
+            raise Exception(f"Expected markdown missing: {expected_path}")
         expected_text = expected_path.read_text(encoding="utf-8")
         assert res.extracted_text == expected_text
