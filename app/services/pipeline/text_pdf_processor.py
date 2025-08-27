@@ -25,7 +25,6 @@ class TextPDFProcessor:
         if not pdf_bytes:
             return TextResult(extracted_text="", page_count=0, confidence=0.0)
 
-        # Open once; reuse for page_count & potential fallback
         doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
         
         page_count = doc.page_count
@@ -35,19 +34,18 @@ class TextPDFProcessor:
 
         # 2) Fallback to raw text if no markdown or lib missing
         if not markdown.strip():
-            markdown = self._extract_text_with_fitz(doc)
+            markdown = self._extract_text_with_pymupdf(doc)
 
         # 3) Post-process for LLM-friendliness (esp. German docs)
         cleaned = self._postprocess_markdown(markdown)
 
-        # Heuristic confidence: we trust text-layer PDFs reasonably
-        base_conf = 0.9 if cleaned.strip() else 0.0
+        # doc.close()
 
         return TextResult(
             extracted_text=cleaned,
             page_count=page_count,
-            confidence=base_conf,
-            extras={"source": "pymupdf4llm" if "```" in markdown or "# " in markdown else "fitz"},
+            confidence=0.9,
+            # hard coded dummy value for confidence for now
         )
 
     # ---------- Internal helpers ----------
@@ -66,7 +64,7 @@ class TextPDFProcessor:
             return ""
 
 
-    def _extract_text_with_fitz(self, doc: pymupdf.Document) -> str:
+    def _extract_text_with_pymupdf(self, doc: pymupdf.Document) -> str:
         """
         Conservative plain-text fallback, stitched as Markdown-ish paragraphs.
         """
