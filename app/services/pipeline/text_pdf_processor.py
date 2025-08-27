@@ -54,14 +54,12 @@ class TextPDFProcessor:
         """
         Returns Markdown if pymupdf4llm is available; otherwise empty string.
         """
-        try:
-            # API accepts a Document; avoids bytes misinterpretation as filename
-            md = pymupdf4llm.to_markdown(doc)
-            if isinstance(md, bytes):
-                md = md.decode("utf-8", errors="replace")
-            return md or ""
-        except Exception:
-            return ""
+        # API accepts a Document; avoids bytes misinterpretation as filename
+        md = pymupdf4llm.to_markdown(doc)
+        if isinstance(md, bytes):
+            md = md.decode("utf-8", errors="replace")
+        return md or ""
+        
 
 
     def _extract_text_with_pymupdf(self, doc: pymupdf.Document) -> str:
