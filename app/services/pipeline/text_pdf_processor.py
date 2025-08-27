@@ -26,12 +26,8 @@ class TextPDFProcessor:
             return TextResult(extracted_text="", page_count=0, confidence=0.0)
 
         # Open once; reuse for page_count & potential fallback
-        try:
-            doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
-        except Exception:
-            # Corrupt PDF or non-PDF bytes
-            return TextResult(extracted_text="", page_count=0, confidence=0.0)
-
+        doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+        
         page_count = doc.page_count
 
         # 1) Extract to Markdown (preferred)
