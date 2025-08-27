@@ -3,8 +3,8 @@ from __future__ import annotations
 import io
 import re
 from typing import Optional
-
 import pymupdf  # PyMuPDF
+import pymupdf4llm  # type: ignore
 from pydantic import BaseModel
 
 # Models
@@ -35,7 +35,7 @@ class TextPDFProcessor:
         page_count = doc.page_count
 
         # 1) Extract to Markdown (preferred)
-        markdown = self._extract_markdown_with_pymupdf4llm(pdf_bytes)
+        markdown = self._extract_markdown_with_pymupdf4llm(doc)
 
         # 2) Fallback to raw text if no markdown or lib missing
         if not markdown.strip():
@@ -56,22 +56,19 @@ class TextPDFProcessor:
 
     # ---------- Internal helpers ----------
 
-    def _extract_markdown_with_pymupdf4llm(self, pdf_bytes: bytes) -> str:
+    def _extract_markdown_with_pymupdf4llm(self, doc: pymupdf.Document) -> str:
         """
         Returns Markdown if pymupdf4llm is available; otherwise empty string.
         """
         try:
-            # Lazy import so the package remains optional at runtime
-            import pymupdf4llm  # type: ignore
-
-            # API: pymupdf4llm.to_markdown(input) accepts bytes or file path
-            md = pymupdf4llm.to_markdown(pdf_bytes)
+            # API accepts a Document; avoids bytes misinterpretation as filename
+            md = pymupdf4llm.to_markdown(doc)
             if isinstance(md, bytes):
                 md = md.decode("utf-8", errors="replace")
             return md or ""
         except Exception:
-            # Package missing or extraction failed → empty string
             return ""
+
 
     def _extract_text_with_fitz(self, doc: pymupdf.Document) -> str:
         """
