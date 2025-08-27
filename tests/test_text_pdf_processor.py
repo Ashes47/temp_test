@@ -61,28 +61,41 @@ def test_basic_extraction_and_cleanup():
     assert "\n\n\n" not in text
 
 
-def test_real_pdf_extraction_smoke():
-    pdf_path = Path(__file__).resolve().parents[1] / "German-SQP.pdf"
-    if not pdf_path.exists():
-        pytest.skip("German-SQP.pdf not present")
+def test_real_pdfs_extraction_matches_expected_markdown():
+    root = Path(__file__).resolve().parents[1]
+    pdf_dir = root / "test_pdfs"
+    md_dir = root / "test_pdf_markdowns"
 
-    pdf_bytes = pdf_path.read_bytes()
+    # Add more pairs as needed
+    pdf_md_pairs = [
+        ("German-SQP.pdf", "German-SQP.extracted.md"),
+        # ("Another.pdf", "Another.extracted.md"),
+    ]
 
     proc = TextPDFProcessor()
-    res = proc.extract_text(pdf_bytes)
 
-    assert res.page_count >= 1
-    assert res.confidence >= 0.0
-    assert isinstance(res.extracted_text, str)
-    assert len(res.extracted_text) > 50
-    assert "\n\n\n" not in res.extracted_text
+    for pdf_name, md_name in pdf_md_pairs:
+        pdf_path = pdf_dir / pdf_name
+        if not pdf_path.exists():
+            pytest.skip(f"{pdf_name} not present in {pdf_dir}")
 
-    # Temp use this to make markdown file for comparison
-    # out_path = pdf_path.with_name(pdf_path.stem + ".extracted.md")
-    # out_path.write_text(res.extracted_text, encoding="utf-8")
-    # print(f"Extracted text written to: {out_path}")
+        pdf_bytes = pdf_path.read_bytes()
+        res = proc.extract_text(pdf_bytes)
 
-    # Use this to compare with the extracted markdown file
-    expected_extracted_text = Path(__file__).resolve().parents[1] / "German-SQP.extracted.md"
-    expected_extracted_text = expected_extracted_text.read_text(encoding="utf-8")
-    assert res.extracted_text == expected_extracted_text
+        # Basic sanity checks
+        assert res.page_count >= 1
+        assert res.confidence >= 0.0
+        assert isinstance(res.extracted_text, str)
+        assert len(res.extracted_text) > 50
+        assert "\n\n\n" not in res.extracted_text
+
+        # Uncomment this block once to generate the expected .extracted.md files
+        # out_path = md_dir / (pdf_path.stem + ".extracted.md")
+        # out_path.write_text(res.extracted_text, encoding="utf-8")
+        # print(f"Extracted text written to: {out_path}")
+
+        expected_path = md_dir / md_name
+        if not expected_path.exists():
+            pytest.skip(f"Expected markdown missing: {expected_path}. Generate it using the commented code above.")
+        expected_text = expected_path.read_text(encoding="utf-8")
+        assert res.extracted_text == expected_text
