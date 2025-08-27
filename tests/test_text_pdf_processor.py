@@ -63,8 +63,8 @@ def test_basic_extraction_and_cleanup():
 
 def test_real_pdfs_extraction_matches_expected_markdown():
     root = Path(__file__).resolve().parents[1]
-    pdf_dir = root / "test_pdfs"
-    md_dir = root / "test_pdf_markdowns"
+    pdf_dir = root / "tests/test_pdfs"
+    md_dir = root / "tests/test_pdf_markdowns"
 
     # Add more pairs as needed
     pdf_md_pairs = [
