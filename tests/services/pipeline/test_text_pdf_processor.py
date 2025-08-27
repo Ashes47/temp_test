@@ -62,9 +62,9 @@ def test_basic_extraction_and_cleanup():
 
 
 def test_real_pdfs_extraction_matches_expected_markdown():
-    root = Path(__file__).resolve().parents[1]
-    pdf_dir = root / "tests/test_pdfs"
-    md_dir = root / "tests/test_pdf_markdowns"
+    project_root = Path(__file__).resolve().parents[2]
+    pdf_dir = project_root / "test_pdfs"
+    md_dir = project_root / "test_pdf_markdowns"
 
     # Add more pairs as needed
     pdf_md_pairs = [
@@ -77,7 +77,7 @@ def test_real_pdfs_extraction_matches_expected_markdown():
     for pdf_name, md_name in pdf_md_pairs:
         pdf_path = pdf_dir / pdf_name
         if not pdf_path.exists():
-            pytest.skip(f"{pdf_name} not present in {pdf_dir}")
+            raise Exception(f"{pdf_name} not present in {pdf_dir}")
 
         pdf_bytes = pdf_path.read_bytes()
         res = proc.extract_text(pdf_bytes)

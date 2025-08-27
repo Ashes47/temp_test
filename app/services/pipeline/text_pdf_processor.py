@@ -3,8 +3,8 @@ from __future__ import annotations
 import io
 import re
 from typing import Optional
-import pymupdf  # PyMuPDF
-import pymupdf4llm  # type: ignore
+import pymupdf
+import pymupdf4llm  
 from pydantic import BaseModel
 
 # Models
@@ -26,25 +26,32 @@ class TextPDFProcessor:
             return TextResult(extracted_text="", page_count=0, confidence=0.0)
 
         doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
-        
-        page_count = doc.page_count
+        try:
+            page_count = doc.page_count
 
-        # 1) Extract to Markdown (preferred)
-        markdown = self._extract_markdown_with_pymupdf4llm(doc)
+            # 1) Extract to Markdown (preferred)
+            markdown = self._extract_markdown_with_pymupdf4llm(doc)
+            used_llm_markdown = bool(markdown.strip())
 
-        # 2) Fallback to raw text if no markdown or lib missing
-        if not markdown.strip():
-            markdown = self._extract_text_with_pymupdf(doc)
+            # 2) Fallback to raw text if no markdown 
+            if not used_llm_markdown:
+                markdown = self._extract_text_with_pymupdf(doc)
 
-        # 3) Post-process for LLM-friendliness (esp. German docs)
-        cleaned = self._postprocess_markdown(markdown)
+            # 3) Post-process for LLM-friendliness (esp. German docs)
+            cleaned = self._postprocess_markdown(markdown)
 
-        return TextResult(
-            extracted_text=cleaned,
-            page_count=page_count,
-            confidence=0.9,
-            # hard coded dummy value for confidence for now
-        )
+            confidence = 0.95 if used_llm_markdown else 0.7
+
+            return TextResult(
+                extracted_text=cleaned,
+                page_count=page_count,
+                confidence=confidence,
+            )
+        finally:
+            try:
+                doc.close()
+            except Exception as e:
+                raise Exception(f"Error processing document: {e}")
 
     # ---------- Internal helpers ----------
 
@@ -58,8 +65,6 @@ class TextPDFProcessor:
             md = md.decode("utf-8", errors="replace")
         return md or ""
         
-
-
     def _extract_text_with_pymupdf(self, doc: pymupdf.Document) -> str:
         """
         Conservative plain-text fallback, stitched as Markdown-ish paragraphs.
