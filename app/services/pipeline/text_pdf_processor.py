@@ -4,7 +4,7 @@ import io
 import re
 from typing import Optional
 
-import fitz  # PyMuPDF
+import pymupdf  # PyMuPDF
 from pydantic import BaseModel
 
 # Models
@@ -27,7 +27,7 @@ class TextPDFProcessor:
 
         # Open once; reuse for page_count & potential fallback
         try:
-            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
         except Exception:
             # Corrupt PDF or non-PDF bytes
             return TextResult(extracted_text="", page_count=0, confidence=0.0)
@@ -73,7 +73,7 @@ class TextPDFProcessor:
             # Package missing or extraction failed → empty string
             return ""
 
-    def _extract_text_with_fitz(self, doc: fitz.Document) -> str:
+    def _extract_text_with_fitz(self, doc: pymupdf.Document) -> str:
         """
         Conservative plain-text fallback, stitched as Markdown-ish paragraphs.
         """

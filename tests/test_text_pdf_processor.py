@@ -1,5 +1,5 @@
 import io
-import fitz  # PyMuPDF
+import pymupdf  # PyMuPDF
 import pytest
 
 from app.services.pipeline.text_pdf_processor import TextPDFProcessor
@@ -7,11 +7,11 @@ from app.services.pipeline.text_pdf_processor import TextPDFProcessor
 
 def _make_pdf_bytes(lines):
     """Create a minimal PDF with given lines on a single page."""
-    doc = fitz.open()
+    doc = pymupdf.open()
     page = doc.new_page()
     y = 72
     for line in lines:
-        page.insert_text(fitz.Point(72, y), line, fontsize=12)
+        page.insert_text(pymupdf.Point(72, y), line, fontsize=12)
         y += 16
     buf = io.BytesIO()
     doc.save(buf)
