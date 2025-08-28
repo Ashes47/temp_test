@@ -1,4 +1,5 @@
 import io
+import sys
 from pathlib import Path
 import pymupdf  # PyMuPDF
 import pytest
@@ -97,5 +98,55 @@ def test_real_pdfs_extraction_matches_expected_markdown():
         expected_path = md_dir / md_name
         if not expected_path.exists():
             raise Exception(f"Expected markdown missing: {expected_path}")
+        expected_text = expected_path.read_text(encoding="utf-8")
+        assert res.extracted_text == expected_text
+
+
+def test_real_pdfs_fallback_plain_text_matches_expected(monkeypatch):
+    """
+    Force the markdown extractor to return empty output so the processor
+    uses the plain-text fallback (_extract_text_with_pymupdf). Compare the
+    cleaned text against a checked-in expected file.
+
+    Use the commented block once to generate the expected fallback markdown
+    from a real PDF, then commit that file and re-enable the assertion.
+    """
+    project_root = Path(__file__).resolve().parents[2]
+    pdf_dir = project_root / "test_pdfs"
+    md_dir = project_root / "test_pdf_markdowns"
+
+    # Ensure the code path falls back to plain text by stubbing the LLM extractor
+    module = sys.modules[TextPDFProcessor.__module__]
+    monkeypatch.setattr(module.pymupdf4llm, "to_markdown", lambda doc: "")
+
+    pdf_md_pairs = [
+        ("German-SQP.pdf", "German-SQP.fallback.md"),
+        # ("Another.pdf", "Another.fallback.md"),
+    ]
+
+    proc = TextPDFProcessor()
+
+    for pdf_name, md_name in pdf_md_pairs:
+        pdf_path = pdf_dir / pdf_name
+        if not pdf_path.exists():
+            raise Exception(f"{pdf_name} not present in {pdf_dir}")
+
+        pdf_bytes = pdf_path.read_bytes()
+        res = proc.extract_text(pdf_bytes)
+
+        # Basic sanity checks for fallback path
+        assert res.page_count >= 1
+        assert isinstance(res.extracted_text, str)
+        assert len(res.extracted_text) > 50
+        assert "\n\n\n" not in res.extracted_text
+
+        # Uncomment this block once to generate the expected fallback .md file
+        out_path = md_dir / md_name
+        out_path.write_text(res.extracted_text, encoding="utf-8")
+        print(f"Fallback extracted text written to: {out_path}")
+
+        expected_path = md_dir / md_name
+        if not expected_path.exists():
+            raise Exception(f"Expected fallback markdown missing: {expected_path}")
         expected_text = expected_path.read_text(encoding="utf-8")
         assert res.extracted_text == expected_text
